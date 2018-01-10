@@ -247,6 +247,22 @@ class Ethereum {
 	}
 	function settings($array) {
 		global $billic, $db;
+		if (isset($_POST['show_wallet_passwords'])) {
+			echo '<table class="table table-striped">';
+			$accounts = $db->q('SELECT * FROM `Ethereum_accounts`');
+			foreach ($accounts as $account) {
+				echo '<tr><td><a href="https://etherscan.io/address/' . $account['address'] . '" target="_new">' . $account['address'] . '</a></td><td>'.$billic->decrypt($account['password']).'</td></tr>';
+			}
+			echo '</table>';
+		} else
+		if (isset($_POST['check_connection'])) {
+			$this->eth = new EthereumRPC(get_config('ethereum_rpc_ip') , get_config('ethereum_rpc_port'));
+			if ($this->eth->ether_request('net_version')) {
+				echo '<div class="alert alert-success" role="alert">RPC connection test successful.</div>';
+			} else {
+				echo '<div class="alert alert-danger" role="alert">RPC connection test failed! Check RPC Host and Port.</div>';
+			}
+		} else
 		if (empty($_POST['update'])) {
 			echo '<form method="POST"><input type="hidden" name="billic_ajax_module" value="Ethereum"><table class="table table-striped">';
 			echo '<tr><th>Setting</th><th>Value</th></tr>';
@@ -266,12 +282,7 @@ class Ethereum {
 				echo '<tr><td><a href="https://etherscan.io/address/' . $account['address'] . '" target="_new">' . $account['address'] . '</a></td><td>' . $this->beautify($account['balance_last']) . ' ETH</td><td>' . ($account['invoice_id'] === NULL ? 'N/A' : '<a href="/Admin/Invoices/ID/' . $account['invoice_id'] . '/" target="_new">#' . $account['invoice_id'] . '</a>') . '</td><td>' . $this->currentPaidVal($account) . ' ETH</td><td>' . ($account['invoice_assigned'] === NULL ? 'N/A' : $account['invoice_assigned']) . '</td></tr>';
 			}
 			echo '</table></form>';
-			$this->eth = new EthereumRPC(get_config('ethereum_rpc_ip') , get_config('ethereum_rpc_port'));
-			if ($this->eth->ether_request('net_version')) {
-				echo '<div class="alert alert-success" role="alert">RPC connection test successful.</div>';
-			} else {
-				echo '<div class="alert alert-danger" role="alert">RPC connection test failed! Check RPC Host and Port.</div>';
-			}
+			echo '<form method="POST"><input type="hidden" name="billic_ajax_module" value="Ethereum"><input type="submit" name="check_connection" value="Check Connection &raquo;" class="btn btn-info"> <input type="submit" name="show_wallet_passwords" value="Show Wallet Passwords" class="btn btn-danger"></form>';
 		} else {
 			if (empty($billic->errors)) {
 				set_config('ethereum_require_verification', $_POST['ethereum_require_verification']);
